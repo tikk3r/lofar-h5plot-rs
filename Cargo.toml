@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-slint = "1.7.0"
+slint = "1.7.1"
+lofar-h5parm-rs = { git = "https://github.com/tikk3r/lofar-h5parm-rs.git"}
+clap = { version = "4.5.11", features = ["derive"] }
 
 [build]
 build = "build.rs"
 edition = 2021
 
 [build-dependencies]
-slint-build = "1.7.0"
+slint-build = "1.7.1"
