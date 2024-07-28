@@ -1,0 +1,129 @@
+import { Button, CheckBox, ComboBox, VerticalBox, CheckBox, StandardListView, Switch } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    title: "LOFAR H5plot";
+    min-width: 400px;
+    min-height: 635px;
+    default-font-family: "JetBrains Mono";
+    default-font-size: 10pt;
+    in-out property <int> counter: 42;
+    in property <[StandardListViewItem]> station_list;
+    in property <[string]> refant_list;
+    callback request-increase-value();
+    VerticalLayout {
+        padding: 5px;
+        GridLayout {
+            height: 30pt;
+            Row {
+                Text {
+                    text: "Solset";
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                    col: 0;
+                }
+                ComboBox {
+                    col: 1;
+                    model: ["calibrator", "target"];
+                }
+            }
+        }
+        GridLayout {
+            height: 30pt;
+            Row {
+                HorizontalLayout {
+                    Text {
+                        text: "Soltab";
+                        vertical-alignment: center;
+                    }
+                    ComboBox {
+                        model: ["polalign", "bandpass"];
+                    }
+                    Text {
+                        text: "vs";
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                    ComboBox {
+                        model: ["time", "frequency", "waterfall"];
+                    }
+                }
+            }
+        }
+        GridLayout {
+            height: 30pt;
+            Row {
+                HorizontalLayout {
+                    Text {
+                        text: "Ref. ant.";
+                        vertical-alignment: center;
+                    }
+                    ComboBox {
+                        model: refant_list;
+                    }
+                    Text {
+                        text: "Dir.";
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                    ComboBox {
+                        model: ["dir00", "dir01", "dir02"];
+                    }
+                }
+            }
+        }
+        GridLayout {
+            height: 60pt;
+            Row {
+                GridLayout {
+                    Row {
+                        Switch {
+                            col: 0;
+                            text: "Plot weights";
+                        }
+                        CheckBox {
+                            col: 1;
+                            text: "Time diff.";
+                        }
+                    }
+                    Row {
+                        CheckBox {
+                            col: 0;
+                            text: "Pol. diff. (XX - YY)";
+                        }
+                        CheckBox {
+                            col: 1;
+                            text: "Frequency diff.";
+                        }
+                    }
+                }
+            }
+        }
+        Button {
+            width: 100%;
+            height: 30pt;
+            text: "Plot";
+            clicked => {
+                root.request-increase-value();
+            }
+        }
+        Button {
+            width: 100%;
+            height: 30pt;
+            text: "Plot all stations";
+            clicked => {
+                root.request-increase-value();
+            }
+        }
+        Text {
+            height: 15pt;
+            padding-bottom: 0;
+            text: "Stations:";
+            vertical-alignment: center;
+        }
+        StandardListView {
+            width: 100%;
+            model: station_list;
+        }
+    }
+}
+

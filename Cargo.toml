@@ -1,0 +1,14 @@
+[package]
+name = "lofar-h5plot-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+slint = "1.7.0"
+
+[build]
+build = "build.rs"
+edition = 2021
+
+[build-dependencies]
+slint-build = "1.7.0"
