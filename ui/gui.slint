@@ -10,6 +10,7 @@ export component AppWindow inherits Window {
     in property <[StandardListViewItem]> station_list;
     in property <[string]> solset_list;
     in property <[string]> soltab_list;
+    in property <[string]> dir_list;
     in property <[string]> refant_list;
     callback request-increase-value();
     VerticalLayout {
@@ -68,7 +69,7 @@ export component AppWindow inherits Window {
                         horizontal-alignment: center;
                     }
                     ComboBox {
-                        model: ["dir00", "dir01", "dir02"];
+                        model: dir_list;
                     }
                 }
             }

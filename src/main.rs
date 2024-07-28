@@ -42,6 +42,14 @@ fn main() -> Result<(), slint::PlatformError> {
         .collect();
     let sts_model = std::rc::Rc::new(slint::VecModel::from(st_names));
 
+    let dirs: Vec<slint::SharedString> = st
+        .get_directions()
+        .clone()
+        .into_iter()
+        .map(|x| slint::SharedString::from(x.as_str()))
+        .collect();
+    let dirs_model = std::rc::Rc::new(slint::VecModel::from(dirs));
+
     let stations: Vec<slint::StandardListViewItem> = ants
         .clone()
         .into_iter()
@@ -57,6 +65,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
     ui.set_solset_list(sss_model.into());
     ui.set_soltab_list(sts_model.into());
+    ui.set_dir_list(dirs_model.into());
     ui.set_station_list(stations_model.into());
     ui.set_refant_list(refant_model.into());
 

@@ -8,9 +8,5 @@ slint = "1.7.1"
 lofar-h5parm-rs = { git = "https://github.com/tikk3r/lofar-h5parm-rs.git", branch = "master"}
 clap = { version = "4.5.11", features = ["derive"] }
 
-[build]
-build = "build.rs"
-edition = 2021
-
 [build-dependencies]
 slint-build = "1.7.1"
