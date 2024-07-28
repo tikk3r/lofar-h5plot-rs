@@ -26,8 +26,6 @@ fn main() -> Result<(), slint::PlatformError> {
     let st = &ss.soltabs[0];
     let ants = st.get_antennas();
 
-    let ui = AppWindow::new()?;
-
     let ss_names: Vec<slint::SharedString> = h5
         .get_solset_names()
         .into_iter()
@@ -58,22 +56,30 @@ fn main() -> Result<(), slint::PlatformError> {
     let stations_model = std::rc::Rc::new(slint::VecModel::from(stations));
 
     let refants: Vec<slint::SharedString> = ants
+        .clone()
         .into_iter()
         .map(|x| slint::SharedString::from(x.as_str()))
         .collect();
     let refant_model = std::rc::Rc::new(slint::VecModel::from(refants));
+
+    let ui = AppWindow::new()?;
 
     ui.set_solset_list(sss_model.into());
     ui.set_soltab_list(sts_model.into());
     ui.set_dir_list(dirs_model.into());
     ui.set_station_list(stations_model.into());
     ui.set_refant_list(refant_model.into());
+    ui.set_current_antenna(slint::StandardListViewItem::from(ants[0].as_str()));
 
-    ui.on_request_increase_value({
+    ui.on_plot({
         let ui_handle = ui.as_weak();
         move || {
             let ui = ui_handle.unwrap();
-            ui.set_counter(ui.get_counter() + 1);
+            let antname = ui.get_current_antenna().text;
+            println!("Plotting {}", antname);
+            let ui2 = PlotWindow::new().expect("Failed to create plot window.");
+            ui2.set_window_title(antname);
+            ui2.run();
         }
     });
 
