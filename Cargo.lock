@@ -2477,7 +2477,7 @@ dependencies = [
 [[package]]
 name = "lofar-h5parm-rs"
 version = "0.0.0"
-source = "git+https://github.com/tikk3r/lofar-h5parm-rs.git#6e1374735b1e90fdca00e105e9d9f05209d00caf"
+source = "git+https://github.com/tikk3r/lofar-h5parm-rs.git?branch=master#d1b8cc5500a5a2ba08eec4eba314a22dee431947"
 dependencies = [
  "anyhow",
  "hdf5",

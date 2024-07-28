@@ -8,6 +8,8 @@ export component AppWindow inherits Window {
     default-font-size: 10pt;
     in-out property <int> counter: 42;
     in property <[StandardListViewItem]> station_list;
+    in property <[string]> solset_list;
+    in property <[string]> soltab_list;
     in property <[string]> refant_list;
     callback request-increase-value();
     VerticalLayout {
@@ -23,7 +25,7 @@ export component AppWindow inherits Window {
                 }
                 ComboBox {
                     col: 1;
-                    model: ["calibrator", "target"];
+                    model: solset_list;
                 }
             }
         }
@@ -36,7 +38,7 @@ export component AppWindow inherits Window {
                         vertical-alignment: center;
                     }
                     ComboBox {
-                        model: ["polalign", "bandpass"];
+                        model: soltab_list;
                     }
                     Text {
                         text: "vs";

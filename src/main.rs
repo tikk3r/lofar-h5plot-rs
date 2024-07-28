@@ -28,6 +28,20 @@ fn main() -> Result<(), slint::PlatformError> {
 
     let ui = AppWindow::new()?;
 
+    let ss_names: Vec<slint::SharedString> = h5
+        .get_solset_names()
+        .into_iter()
+        .map(|x| slint::SharedString::from(x.as_str()))
+        .collect();
+    let sss_model = std::rc::Rc::new(slint::VecModel::from(ss_names.clone()));
+
+    let st_names: Vec<slint::SharedString> = ss
+        .get_soltab_names()
+        .into_iter()
+        .map(|x| slint::SharedString::from(x.as_str()))
+        .collect();
+    let sts_model = std::rc::Rc::new(slint::VecModel::from(st_names));
+
     let stations: Vec<slint::StandardListViewItem> = ants
         .clone()
         .into_iter()
@@ -41,6 +55,8 @@ fn main() -> Result<(), slint::PlatformError> {
         .collect();
     let refant_model = std::rc::Rc::new(slint::VecModel::from(refants));
 
+    ui.set_solset_list(sss_model.into());
+    ui.set_soltab_list(sts_model.into());
     ui.set_station_list(stations_model.into());
     ui.set_refant_list(refant_model.into());
 

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 slint = "1.7.1"
-lofar-h5parm-rs = { git = "https://github.com/tikk3r/lofar-h5parm-rs.git"}
+lofar-h5parm-rs = { git = "https://github.com/tikk3r/lofar-h5parm-rs.git", branch = "master"}
 clap = { version = "4.5.11", features = ["derive"] }
 
 [build]
