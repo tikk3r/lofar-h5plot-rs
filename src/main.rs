@@ -1,5 +1,7 @@
 use clap::Parser;
 use lofar_h5parm_rs;
+use ndarray::{s, Array2};
+use plotters::prelude::*;
 use slint;
 
 slint::include_modules!();
@@ -16,6 +18,20 @@ slint::include_modules!();
 struct Args {
     /// H5parm to summarise.
     h5parm: String,
+}
+
+fn render_plot(idx_ant: i32) -> slint::Image {
+    let mut pixel_buffer = slint::SharedPixelBuffer::new(640, 480);
+    println!("Inside render function");
+    println!("= Plotting antenna {}", idx_ant);
+    // todo load data from h5parm
+    let size = (pixel_buffer.width(), pixel_buffer.height());
+    let backend = BitMapBackend::with_buffer(pixel_buffer.make_mut_bytes(), size);
+    let root = backend.into_drawing_area();
+    root.fill(&plotters::prelude::WHITE).expect("RENDER: Failed to draw to drawing area");
+
+    drop(root);
+    slint::Image::from_rgb8(pixel_buffer)
 }
 
 fn main() -> Result<(), slint::PlatformError> {
@@ -62,6 +78,10 @@ fn main() -> Result<(), slint::PlatformError> {
         .collect();
     let refant_model = std::rc::Rc::new(slint::VecModel::from(refants));
 
+    let data = st.get_values();
+    dbg!(data.shape());
+    //dbg!(data.slice(s![.., .., 0, 0, 0]));
+
     let ui = AppWindow::new()?;
 
     ui.set_solset_list(sss_model.into());
@@ -79,7 +99,10 @@ fn main() -> Result<(), slint::PlatformError> {
             println!("Plotting {}", antname);
             let ui2 = PlotWindow::new().expect("Failed to create plot window.");
             ui2.set_window_title(antname);
-            ui2.run();
+            ui2.set_idx_ant(ui.get_current_antenna_idx());
+
+            ui2.on_render_plot(render_plot);
+            let _ = ui2.run();
         }
     });
 

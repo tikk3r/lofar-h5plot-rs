@@ -1,8 +1,71 @@
-import { Button, CheckBox, ComboBox, VerticalBox, CheckBox, StandardListView, Switch } from "std-widgets.slint";
+import { Button, CheckBox, ComboBox, VerticalBox, Slider, StandardListView, Switch } from "std-widgets.slint";
 
 export component PlotWindow inherits Window {
     in property <string> window_title;
+    in property <int> idx_ant;
     title: window_title;
+    min-width: 512px;
+    min-height: 512px;
+
+    pure callback render_plot(int) -> image;
+
+    VerticalLayout {
+        padding: 5px;
+        VerticalLayout {
+            Image {
+                height: 80%;
+                source: root.render_plot(idx_ant);
+            }
+            GridLayout {
+                height: 10%;
+                Button {
+                    col: 0;
+                    row: 1;
+                    text: "Prev.";
+                }
+                Text {
+                    col: 1;
+                    row: 0;
+                    colspan: 4;
+                    text: "Frequency: 121.45 MHz";
+                    horizontal-alignment: center;
+                }
+                Slider {
+                    col: 1;
+                    row: 1;
+                    colspan: 4;
+                }
+                Button {
+                    col: 5;
+                    row: 1;
+                    text: "Next";
+                }
+            }
+            GridLayout{
+                height: 10%;
+                Button {
+                    col: 0;
+                    row: 0;
+                    text: "Previous antenna";
+                }
+                Button {
+                    col: 1;
+                    row: 0;
+                    text: "Next antenna";
+                }
+                Button {
+                    col: 2;
+                    row: 0;
+                    text: "Previous direction";
+                }
+                Button {
+                    col: 3;
+                    row: 0;
+                    text: "Next direction";
+                }
+            }
+        }
+    }
 }
 
 export component AppWindow inherits Window {
@@ -12,6 +75,7 @@ export component AppWindow inherits Window {
     default-font-family: "JetBrains Mono";
     default-font-size: 10pt;
     in-out property <StandardListViewItem> current_antenna;
+    in-out property <int> current_antenna_idx;
     in property <[StandardListViewItem]> station_list;
     in property <[string]> solset_list;
     in property <[string]> soltab_list;
@@ -136,8 +200,10 @@ export component AppWindow inherits Window {
         StandardListView {
             width: 100%;
             model: station_list;
+            current-item: 0;
             current-item-changed => {
                 current_antenna = station_list[self.current-item];
+                current_antenna_idx = self.current-item;
             }
         }
     }
