@@ -9,6 +9,8 @@ lofar-h5parm-rs = { git = "https://github.com/tikk3r/lofar-h5parm-rs.git", branc
 clap = { version = "4.5.11", features = ["derive"] }
 plotters = "0.3.6"
 ndarray = "0.15.6"
+cube_helix = "0.1.1"
+colorgrad = "0.6.2"
 
 [build-dependencies]
 slint-build = "1.7.1"

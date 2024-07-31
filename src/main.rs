@@ -1,4 +1,5 @@
 use clap::Parser;
+use colorgrad;
 use lofar_h5parm_rs;
 use ndarray::{arr2, s, Array, Array2};
 use plotters::prelude::*;
@@ -18,6 +19,24 @@ slint::include_modules!();
 struct Args {
     /// H5parm to summarise.
     h5parm: String,
+}
+
+fn wrap_phase(p: f64) -> f64 {
+    //println!("Before remainder: {}", p);
+    //dbg!(p);
+    //dbg!(p + std::f64::consts::PI);
+    //dbg!((p + std::f64::consts::PI) % (2.0 * std::f64::consts::PI));
+    //dbg!((p + std::f64::consts::PI) % (2.0 * std::f64::consts::PI) - std::f64::consts::PI);
+    //((a % b) + b) % b
+    let wrapped = (p + std::f64::consts::PI).rem_euclid(2.0 * std::f64::consts::PI) - std::f64::consts::PI;
+    //println!("After remainder: {}", wrapped);
+    wrapped
+}
+
+fn normalise_phase(p: f64) -> f64{
+    let positive = p + std::f64::consts::PI;
+    let min = 0.0;//-std::f64::consts::PI;
+    (positive - min) / (2.0 * std::f64::consts::PI)
 }
 
 fn render_plot(
@@ -70,6 +89,9 @@ fn render_plot(
         .draw()
         .expect("RENDER: error drawing");
 
+    //let ch: cube_helix::CubeHelix = Default::default();
+    let color = colorgrad::sinebow();
+
     chart
         .draw_series(
             (0i32..naxis1 as i32)
@@ -77,13 +99,18 @@ fn render_plot(
                     (0i32..naxis2 as i32).map(move |j| (i, j, data_ant[[i as usize, j as usize]] - data_ref[[i as usize, j as usize]]))
                 })
                 .map(|(i, j, d)| {
+                    //let color = ch.get_color(normalise_phase(wrap_phase(d)));
+                    //dbg!(color);
+                    let c = color.at(normalise_phase(wrap_phase(d))).to_linear_rgba_u8();
+                    //dbg!(c)
                     Rectangle::new(
                         [(i, naxis2 as i32 - j), (i + 1, naxis2 as i32 - j + 1)],
-                        HSLColor(
-                            240.0 / 360.0 - 240.0 / 360.0 * d / std::f64::consts::PI as f64,
-                            0.7,
-                            0.5,
-                        )
+                        RGBColor(c.0, c.1, c.2)
+                        //HSLColor(
+                        //    240.0 / 360.0 - 240.0 / 360.0 * d / std::f64::consts::PI as f64,
+                        //    1.0,
+                        //    0.5,
+                        //)
                         .filled(),
                     )
                 }),
