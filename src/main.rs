@@ -1,6 +1,6 @@
 use clap::Parser;
 use lofar_h5parm_rs;
-use ndarray::{s, Array2};
+use ndarray::{arr2, s, Array, Array2};
 use plotters::prelude::*;
 use slint;
 
@@ -20,16 +20,76 @@ struct Args {
     h5parm: String,
 }
 
-fn render_plot(idx_ant: i32) -> slint::Image {
-    let mut pixel_buffer = slint::SharedPixelBuffer::new(640, 480);
+fn render_plot(
+    idx_ant: i32,
+    h5parm: slint::SharedString,
+    solset: slint::SharedString,
+    soltab: slint::SharedString,
+    width: i32,
+    height: i32,
+) -> slint::Image {
+    let aspect = width as f64 / height as f64;
+    println!("Aspect ratio is {}", aspect);
+    println!("Width is {}", width);
+    println!("Height is {}", height);
+    let mut pixel_buffer = slint::SharedPixelBuffer::new(width as u32, (width as f64 / aspect) as u32);
     println!("Inside render function");
     println!("= Plotting antenna {}", idx_ant);
-    // todo load data from h5parm
+    println!("Opening {}", h5parm.to_string());
+    let h5 =
+        lofar_h5parm_rs::H5parm::open(&h5parm.to_string(), false).expect("Failed to read h5parm");
+    let ss = &h5.get_solset(solset.to_string()).unwrap();
+    let st = &ss.get_soltab(soltab.to_string()).unwrap();
+    let data = st.get_values();
+    let data_ref = data.slice(s![.., .., -1, 0]);
+    let data_ant = data.slice(s![.., .., idx_ant as usize, 0]);
+    let naxis1 = data_ant.shape()[0];
+    let naxis2 = data_ant.shape()[1];
+
+    // Construct the plot
     let size = (pixel_buffer.width(), pixel_buffer.height());
     let backend = BitMapBackend::with_buffer(pixel_buffer.make_mut_bytes(), size);
     let root = backend.into_drawing_area();
-    root.fill(&plotters::prelude::WHITE).expect("RENDER: Failed to draw to drawing area");
+    root.fill(&plotters::prelude::WHITE)
+        .expect("RENDER: Failed to draw to drawing area");
 
+    let mut chart = ChartBuilder::on(&root)
+        .caption("Plot!", ("sans-serif", 24))
+        .x_label_area_size(40)
+        .y_label_area_size(40)
+        .build_cartesian_2d(0..naxis1 as i32, naxis2 as i32..0)
+        .expect("RENDER: error building coordinates");
+
+    chart
+        .configure_mesh()
+        .x_labels(15)
+        .y_labels(15)
+        .disable_x_mesh()
+        .disable_y_mesh()
+        .label_style(("sans-serif", 20))
+        .draw()
+        .expect("RENDER: error drawing");
+
+    chart
+        .draw_series(
+            (0i32..naxis1 as i32)
+                .flat_map(move |i| {
+                    (0i32..naxis2 as i32).map(move |j| (i, j, data_ant[[i as usize, j as usize]] - data_ref[[i as usize, j as usize]]))
+                })
+                .map(|(i, j, d)| {
+                    Rectangle::new(
+                        [(i, naxis2 as i32 - j), (i + 1, naxis2 as i32 - j + 1)],
+                        HSLColor(
+                            240.0 / 360.0 - 240.0 / 360.0 * d / std::f64::consts::PI as f64,
+                            0.7,
+                            0.5,
+                        )
+                        .filled(),
+                    )
+                }),
+        )
+        .expect("RENDER: failed to render plot");
+    drop(chart);
     drop(root);
     slint::Image::from_rgb8(pixel_buffer)
 }
@@ -39,7 +99,8 @@ fn main() -> Result<(), slint::PlatformError> {
     let h5name = args.h5parm;
     let h5 = lofar_h5parm_rs::H5parm::open(&h5name, false).expect("Failed to read h5parm");
     let ss = &h5.solsets[0];
-    let st = &ss.soltabs[0];
+    //let st = &ss.soltabs[0];
+    let st = &ss.get_soltab("phase000".to_string()).unwrap();
     let ants = st.get_antennas();
 
     let ss_names: Vec<slint::SharedString> = h5
@@ -54,7 +115,7 @@ fn main() -> Result<(), slint::PlatformError> {
         .into_iter()
         .map(|x| slint::SharedString::from(x.as_str()))
         .collect();
-    let sts_model = std::rc::Rc::new(slint::VecModel::from(st_names));
+    let sts_model = std::rc::Rc::new(slint::VecModel::from(st_names.clone()));
 
     let dirs: Vec<slint::SharedString> = st
         .get_directions()
@@ -78,10 +139,6 @@ fn main() -> Result<(), slint::PlatformError> {
         .collect();
     let refant_model = std::rc::Rc::new(slint::VecModel::from(refants));
 
-    let data = st.get_values();
-    dbg!(data.shape());
-    //dbg!(data.slice(s![.., .., 0, 0, 0]));
-
     let ui = AppWindow::new()?;
 
     ui.set_solset_list(sss_model.into());
@@ -90,6 +147,10 @@ fn main() -> Result<(), slint::PlatformError> {
     ui.set_station_list(stations_model.into());
     ui.set_refant_list(refant_model.into());
     ui.set_current_antenna(slint::StandardListViewItem::from(ants[0].as_str()));
+
+    ui.set_h5parm(h5name.clone().into());
+    ui.set_solset(ss_names[0].clone().into());
+    ui.set_soltab(st_names[0].clone().into());
 
     ui.on_plot({
         let ui_handle = ui.as_weak();
@@ -100,6 +161,9 @@ fn main() -> Result<(), slint::PlatformError> {
             let ui2 = PlotWindow::new().expect("Failed to create plot window.");
             ui2.set_window_title(antname);
             ui2.set_idx_ant(ui.get_current_antenna_idx());
+            ui2.set_h5parm(h5name.clone().into());
+            ui2.set_solset(ui.get_solset());
+            ui2.set_soltab(ui.get_soltab());
 
             ui2.on_render_plot(render_plot);
             let _ = ui2.run();

@@ -3,66 +3,70 @@ import { Button, CheckBox, ComboBox, VerticalBox, Slider, StandardListView, Swit
 export component PlotWindow inherits Window {
     in property <string> window_title;
     in property <int> idx_ant;
+
+    in property <string> h5parm;
+    in property <string> solset;
+    in property <string> soltab;
     title: window_title;
     min-width: 512px;
     min-height: 512px;
 
-    pure callback render_plot(int) -> image;
+    pure callback render_plot(int, string, string, string, int, int) -> image;
 
     VerticalLayout {
         padding: 5px;
-        VerticalLayout {
-            Image {
-                height: 80%;
-                source: root.render_plot(idx_ant);
+        Image {
+            height: 85%;
+            width: 100%;
+            source: render_plot(idx_ant, h5parm, solset, soltab, parent.width/1px, parent.height/1px);
+        }
+        GridLayout {
+            height: 5%;
+            Button {
+                col: 0;
+                row: 0;
+                text: "Prev.";
             }
-            GridLayout {
-                height: 10%;
-                Button {
-                    col: 0;
-                    row: 1;
-                    text: "Prev.";
-                }
-                Text {
-                    col: 1;
-                    row: 0;
-                    colspan: 4;
-                    text: "Frequency: 121.45 MHz";
-                    horizontal-alignment: center;
-                }
-                Slider {
-                    col: 1;
-                    row: 1;
-                    colspan: 4;
-                }
-                Button {
-                    col: 5;
-                    row: 1;
-                    text: "Next";
-                }
+            Text {
+                col: 1;
+                row: 0;
+                colspan: 4;
+                text: "Correlation: XX";
+                horizontal-alignment: center;
+                vertical-alignment: center;
             }
-            GridLayout{
-                height: 10%;
-                Button {
-                    col: 0;
-                    row: 0;
-                    text: "Previous antenna";
-                }
-                Button {
-                    col: 1;
-                    row: 0;
-                    text: "Next antenna";
-                }
-                Button {
-                    col: 2;
-                    row: 0;
-                    text: "Previous direction";
-                }
-                Button {
-                    col: 3;
-                    row: 0;
-                    text: "Next direction";
-                }
+            //Slider {
+            //    col: 1;
+            //    row: 1;
+            //    colspan: 4;
+            //}
+            Button {
+                col: 5;
+                row: 0;
+                text: "Next";
+            }
+        }
+        GridLayout{
+            height: 10%;
+            Button {
+                col: 0;
+                row: 0;
+                text: "Previous antenna";
+            }
+            Button {
+                col: 1;
+                row: 0;
+                text: "Next antenna";
+            }
+            Button {
+                col: 2;
+                row: 0;
+                text: "Previous direction";
+            }
+            Button {
+                col: 3;
+                row: 0;
+                text: "Next direction";
             }
         }
     }
@@ -74,13 +78,19 @@ export component AppWindow inherits Window {
     min-height: 635px;
     default-font-family: "JetBrains Mono";
     default-font-size: 10pt;
+
     in-out property <StandardListViewItem> current_antenna;
     in-out property <int> current_antenna_idx;
+
     in property <[StandardListViewItem]> station_list;
     in property <[string]> solset_list;
     in property <[string]> soltab_list;
     in property <[string]> dir_list;
     in property <[string]> refant_list;
+
+    in property <string> h5parm;
+    in-out property <string> solset;
+    in-out property <string> soltab;
 
     callback plot();
     callback update_antenna(int);
@@ -101,9 +111,12 @@ export component AppWindow inherits Window {
                     horizontal-alignment: center;
                     col: 0;
                 }
-                ComboBox {
+                solsetPicker := ComboBox {
                     col: 1;
                     model: solset_list;
+                    selected => {
+                        solset = self.current-value;
+                    }
                 }
             }
         }
@@ -117,6 +130,9 @@ export component AppWindow inherits Window {
                     }
                     ComboBox {
                         model: soltab_list;
+                        selected => {
+                            soltab = self.current-value;
+                        }
                     }
                     Text {
                         text: "vs";
