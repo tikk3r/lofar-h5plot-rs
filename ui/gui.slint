@@ -2,7 +2,8 @@ import { Button, CheckBox, ComboBox, VerticalBox, Slider, StandardListView, Swit
 
 export component PlotWindow2D inherits Window {
     in property <string> window_title;
-    in property <int> idx_ant;
+    in-out property <string> ant;
+    in-out property <int> idx_ant;
     in property <int> idx_refant;
 
     in property <string> h5parm;
@@ -13,6 +14,8 @@ export component PlotWindow2D inherits Window {
     min-height: 512px;
 
     pure callback render_plot(int, int, string, string, string, int, int) -> image;
+    pure callback decrease_ant();
+    pure callback increase_ant();
 
     VerticalLayout {
         padding: 5px;
@@ -36,11 +39,7 @@ export component PlotWindow2D inherits Window {
                 horizontal-alignment: center;
                 vertical-alignment: center;
             }
-            //Slider {
-            //    col: 1;
-            //    row: 1;
-            //    colspan: 4;
-            //}
+            // Switch correlations
             Button {
                 col: 5;
                 row: 0;
@@ -53,11 +52,17 @@ export component PlotWindow2D inherits Window {
                 col: 0;
                 row: 0;
                 text: "Previous antenna";
+                clicked => {
+                    decrease_ant();
+                }
             }
             Button {
                 col: 1;
                 row: 0;
                 text: "Next antenna";
+                clicked => {
+                    increase_ant();
+                }
             }
             Button {
                 col: 2;
