@@ -47,6 +47,7 @@ fn get_data(h5parm: String, solset: String, soltab: String, idx_ant: i32) -> Arr
 
 fn render_plot(
     idx_ant: i32,
+    idx_refant: i32,
     h5parm: slint::SharedString,
     solset: slint::SharedString,
     soltab: slint::SharedString,
@@ -58,7 +59,7 @@ fn render_plot(
 
     // TODO: replace this with a data buffer to avoid reading the file every time
     //println!("Loading data from h5parm");
-    let data_ref = get_data(h5parm.to_string(), solset.to_string(), soltab.to_string(), 0);
+    let data_ref = get_data(h5parm.to_string(), solset.to_string(), soltab.to_string(), idx_refant);
     let data_ant = get_data(h5parm.to_string(), solset.to_string(), soltab.to_string(), idx_ant);
     let naxis1 = data_ant.shape()[0] as usize;
     let naxis2 = data_ant.shape()[1] as usize;
@@ -186,6 +187,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let ui2 = PlotWindow2D::new().expect("Failed to create plot window.");
             ui2.set_window_title(antname);
             ui2.set_idx_ant(ui.get_current_antenna_idx());
+            ui2.set_idx_refant(ui.get_current_ref_antenna_idx());
             ui2.set_h5parm(h5name.clone().into());
             ui2.set_solset(ui.get_solset());
             ui2.set_soltab(ui.get_soltab());

@@ -3,6 +3,7 @@ import { Button, CheckBox, ComboBox, VerticalBox, Slider, StandardListView, Swit
 export component PlotWindow2D inherits Window {
     in property <string> window_title;
     in property <int> idx_ant;
+    in property <int> idx_refant;
 
     in property <string> h5parm;
     in property <string> solset;
@@ -11,15 +12,14 @@ export component PlotWindow2D inherits Window {
     min-width: 512px;
     min-height: 512px;
 
-    pure callback render_plot(int, string, string, string, int, int) -> image;
+    pure callback render_plot(int, int, string, string, string, int, int) -> image;
 
     VerticalLayout {
         padding: 5px;
         Image {
             height: 85%;
             width: 100%;
-            //source: render_plot(idx_ant, h5parm, solset, soltab, parent.width/1px, parent.height/1px);
-            source: render_plot(idx_ant, h5parm, solset, soltab, 1280, 720);
+            source: render_plot(idx_ant, idx_refant, h5parm, solset, soltab, 1280, 720);
         }
         GridLayout {
             height: 5%;
@@ -82,6 +82,8 @@ export component AppWindow inherits Window {
 
     in-out property <StandardListViewItem> current_antenna;
     in-out property <int> current_antenna_idx;
+    in-out property <StandardListViewItem> current_ref_antenna;
+    in-out property <int> current_ref_antenna_idx;
 
     in property <[StandardListViewItem]> station_list;
     in property <[string]> solset_list;
@@ -156,6 +158,10 @@ export component AppWindow inherits Window {
                     }
                     ComboBox {
                         model: refant_list;
+                        selected => {
+                            current_ref_antenna = station_list[self.current-index];
+                            current_ref_antenna_idx = self.current-index;
+                        }
                     }
                     Text {
                         text: "Dir.";
