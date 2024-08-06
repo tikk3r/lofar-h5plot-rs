@@ -18,7 +18,8 @@ export component PlotWindow2D inherits Window {
         Image {
             height: 85%;
             width: 100%;
-            source: render_plot(idx_ant, h5parm, solset, soltab, parent.width/1px, parent.height/1px);
+            //source: render_plot(idx_ant, h5parm, solset, soltab, parent.width/1px, parent.height/1px);
+            source: render_plot(idx_ant, h5parm, solset, soltab, 1280, 720);
         }
         GridLayout {
             height: 5%;

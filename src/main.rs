@@ -28,9 +28,10 @@ fn wrap_phase(p: f64) -> f64 {
 }
 
 fn normalise_phase(p: f64) -> f64{
-    let positive = p + std::f64::consts::PI;
-    let min = 0.0;
-    (positive - min) / (2.0 * std::f64::consts::PI)
+    //let positive = p + std::f64::consts::PI;
+    let min = -std::f64::consts::PI;
+    //let min = 0.0;
+    (p - min) / (2.0 * std::f64::consts::PI)
 }
 
 #[cached]
@@ -39,7 +40,7 @@ fn get_data(h5parm: String, solset: String, soltab: String, idx_ant: i32) -> Arr
         lofar_h5parm_rs::H5parm::open(&h5parm, false).expect("Failed to read h5parm");
     let ss = h5.get_solset(solset).unwrap();
     let st = ss.get_soltab(soltab).unwrap();
-    let data =st.get_values();
+    let data = st.get_values();
     let data_ref = data.slice(s![.., .., idx_ant, 0]);
     data_ref.to_owned()
 }
@@ -57,7 +58,7 @@ fn render_plot(
 
     // TODO: replace this with a data buffer to avoid reading the file every time
     //println!("Loading data from h5parm");
-    let data_ref = get_data(h5parm.to_string(), solset.to_string(), soltab.to_string(), -1);
+    let data_ref = get_data(h5parm.to_string(), solset.to_string(), soltab.to_string(), 0);
     let data_ant = get_data(h5parm.to_string(), solset.to_string(), soltab.to_string(), idx_ant);
     let naxis1 = data_ant.shape()[0] as usize;
     let naxis2 = data_ant.shape()[1] as usize;
@@ -72,7 +73,7 @@ fn render_plot(
 
     //println!("== Creating chart");
     let mut chart = ChartBuilder::on(&root)
-        .caption("Plot!", ("sans-serif", 24))
+        .caption(" ", ("sans-serif", 10).into_font())
         .x_label_area_size(40)
         .y_label_area_size(40)
         .build_cartesian_2d(0..naxis1 as i32, naxis2 as i32..0)
@@ -91,6 +92,7 @@ fn render_plot(
     //let ch: cube_helix::CubeHelix = Default::default();
     let color = colorgrad::sinebow();
 
+
     //println!("== Drawing pixels");
     chart
         .draw_series(
@@ -104,7 +106,7 @@ fn render_plot(
                     let c = color.at(normalise_phase(wrap_phase(d))).to_linear_rgba_u8();
                     Rectangle::new(
                         [(i as i32, (naxis2 - j) as i32), ((i + 1) as i32, (naxis2 - j + 1) as i32)],
-                        RGBColor(c.0, c.1, c.2)
+                        RGBAColor(c.0, c.1, c.2, (c.3 as f64) / 255.)
                         .filled(),
                     )
                 }),
