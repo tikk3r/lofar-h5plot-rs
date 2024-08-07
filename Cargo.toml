@@ -13,6 +13,7 @@ ndarray = "0.15.6"
 cube_helix = "0.1.1"
 colorgrad = "0.6.2"
 cached = "0.53.1"
+image = "0.25.2"
 
 [build-dependencies]
 slint-build = "1.7.1"

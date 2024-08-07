@@ -41,18 +41,20 @@ fn get_data(
     solset: String,
     soltab: String,
     idx_ant: i32,
+    idx_corr: i32,
 ) -> ArrayBase<OwnedRepr<f64>, Dim<[usize; 2]>> {
     let h5 = lofar_h5parm_rs::H5parm::open(&h5parm, false).expect("Failed to read h5parm");
     let ss = h5.get_solset(solset).unwrap();
     let st = ss.get_soltab(soltab).unwrap();
     let data = st.get_values();
-    let data_ref = data.slice(s![.., .., idx_ant, 0]);
+    let data_ref = data.slice(s![.., .., idx_ant, idx_corr]);
     data_ref.to_owned()
 }
 
 fn render_plot(
     idx_ant: i32,
     idx_refant: i32,
+    idx_corr: i32,
     h5parm: slint::SharedString,
     solset: slint::SharedString,
     soltab: slint::SharedString,
@@ -70,12 +72,14 @@ fn render_plot(
         solset.to_string(),
         soltab.to_string(),
         idx_refant,
+        idx_corr,
     );
     let data_ant = get_data(
         h5parm.to_string(),
         solset.to_string(),
         soltab.to_string(),
         idx_ant,
+        idx_corr,
     );
     let naxis1 = data_ant.shape()[0] as usize;
     let naxis2 = data_ant.shape()[1] as usize;
@@ -128,6 +132,7 @@ fn render_plot(
                 }),
         )
         .expect("RENDER: failed to render plot");
+
     drop(chart);
     drop(root);
     slint::Image::from_rgb8(pixel_buffer)
@@ -141,6 +146,17 @@ fn main() -> Result<(), slint::PlatformError> {
     //let st = &ss.soltabs[0];
     let st = &ss.get_soltab("phase000".to_string()).unwrap();
     let ants = st.get_antennas();
+    let corr_names: Vec<slint::SharedString> = st
+        .get_polarisations()
+        .into_iter()
+        .map(|x| slint::SharedString::from(x.as_str()))
+        .collect();
+    // This is always at least a length-1 Vec with an empty string
+    let corr_model = if corr_names[0] == "" {
+        std::rc::Rc::new(slint::VecModel::from(vec![slint::SharedString::from("I")].clone()))
+    } else {
+        std::rc::Rc::new(slint::VecModel::from(corr_names.clone()))
+    };
 
     let ss_names: Vec<slint::SharedString> = h5
         .get_solset_names()
@@ -205,6 +221,8 @@ fn main() -> Result<(), slint::PlatformError> {
             ui2.set_h5parm(h5name.clone().into());
             ui2.set_solset(ui.get_solset());
             ui2.set_soltab(ui.get_soltab());
+            ui2.set_idx_corr(0);
+            ui2.set_corr_list(corr_model.clone().into());
 
             ui2.on_decrease_ant({
                 let handle = ui2.as_weak().unwrap();
@@ -225,6 +243,22 @@ fn main() -> Result<(), slint::PlatformError> {
                     let sl = stations2[new_idx].text.clone();
                     handle.set_idx_ant(new_idx as i32);
                     handle.set_window_title(sl.clone());
+                }
+            });
+
+            ui2.on_decrease_corr({
+                let handle = ui2.as_weak().unwrap();
+                move || {
+                    let new_idx = (handle.get_idx_corr() - 1) as usize;
+                    handle.set_idx_corr(new_idx as i32);
+                }
+            });
+
+            ui2.on_increase_corr({
+                let handle = ui2.as_weak().unwrap();
+                move || {
+                    let new_idx = (handle.get_idx_corr() + 1) as usize;
+                    handle.set_idx_corr(new_idx as i32);
                 }
             });
 

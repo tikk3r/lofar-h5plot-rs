@@ -2,27 +2,30 @@ import { Button, CheckBox, ComboBox, VerticalBox, Slider, StandardListView, Swit
 
 export component PlotWindow2D inherits Window {
     in property <string> window_title;
-    in-out property <string> ant;
-    in-out property <int> idx_ant;
+    in property <string> ant;
+    in property <int> idx_corr;
+    in property <int> idx_ant;
     in property <int> idx_refant;
-
     in property <string> h5parm;
     in property <string> solset;
     in property <string> soltab;
+    in property <[string]> corr_list;
     title: window_title;
     min-width: 512px;
     min-height: 512px;
 
-    pure callback render_plot(int, int, string, string, string, int, int) -> image;
+    pure callback render_plot(int, int, int, string, string, string, int, int) -> image;
     pure callback decrease_ant();
     pure callback increase_ant();
+    pure callback decrease_corr();
+    pure callback increase_corr();
 
     VerticalLayout {
         padding: 5px;
         Image {
             height: 85%;
             width: 100%;
-            source: render_plot(idx_ant, idx_refant, h5parm, solset, soltab, 1280, 720);
+            source: render_plot(idx_ant, idx_refant, idx_corr, h5parm, solset, soltab, 1280, 720);
         }
         GridLayout {
             height: 5%;
@@ -30,12 +33,17 @@ export component PlotWindow2D inherits Window {
                 col: 0;
                 row: 0;
                 text: "Prev.";
+                clicked => {
+                    if corr_list.length > 1 {
+                        decrease_corr();
+                    }
+                }
             }
             Text {
                 col: 1;
                 row: 0;
                 colspan: 4;
-                text: "Correlation: XX";
+                text: "Correlation: " + corr_list[idx_corr];
                 horizontal-alignment: center;
                 vertical-alignment: center;
             }
@@ -44,6 +52,11 @@ export component PlotWindow2D inherits Window {
                 col: 5;
                 row: 0;
                 text: "Next";
+                clicked => {
+                    if corr_list.length > 1 {
+                        increase_corr();
+                    }
+                }
             }
         }
         GridLayout{
