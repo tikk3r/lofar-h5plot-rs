@@ -1,2 +1,4 @@
-/target
-*.h5
+**/node_modules
+**/target
+**/*.h5
+**/package-lock.json
