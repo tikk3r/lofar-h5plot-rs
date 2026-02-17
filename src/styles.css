@@ -7,7 +7,6 @@
   line-height: 24px;
   font-weight: 400;
   overflow: hidden;
-  min-height: 512px;
   height: 100%;
   width: 100%;
   color: #0f0f0f;
@@ -39,22 +38,23 @@ html, body {
 }
 
 .selectors {
-    height: 128px;
-    min-height: 128px;
   border-right: solid;
+  height: 20%;
+  max-height: 128px;
 }
 
 .antennaselector {
-    height: 80%;
-    overflow-y: auto;
+  height: 80%;
+  max-height: 80%;
+  overflow-y: auto;
   border-right: solid;
 }
 
 .scrollable-list {
-  height: 100%; /* Full height of the parent container */
-  width: 100%;  /* Full width of the parent container */
-  overflow-y: auto;  /* Scroll when content exceeds the visible area */
-  display: block; /* Ensures it behaves like a block-level element */
+  height: 100%; 
+  width: 100%;
+  overflow-y: scroll;
+  display: flex;
   padding: 10px;
 }
 

@@ -65,7 +65,7 @@ const renderPlot = function(data: any, mode: string, dimension: string) {
     } else if (dimension.length = 2) {
       const plot = Plot.plot({
         marks: [Plot.raster(
-            data,
+            data[0],
             {
               width: dimension[0],
               height: dimension[1],
@@ -77,12 +77,15 @@ const renderPlot = function(data: any, mode: string, dimension: string) {
         height: plotContainer!.clientHeight,
         marginBottom: 60,
         marginLeft: 90,
+        marginTop: 50,
         x: {
             label: "Time [s]",
+            tickRotate: -25,
+            tickFormat: (d: number) => (data[1][d] - data[1][0]).toFixed(0),
         },
         y: {
           label: "Frequency [MHz]",
-          labelRotate: -90,
+          tickFormat: (d: number) => (data[2][d] / 1e6).toFixed(1),
         },
         style: {
           width: '100%',
@@ -107,16 +110,15 @@ window.addEventListener('resize', () => {
     }else if (st_selected.includes("amplitude")) {
         mode = "amplitude";
     }
-    console.log(plot_dimensions);
     if (plot_dimensions.length == 1){
         renderPlot(data, mode, plot_dimensions);
     }
 });
 
-//async function get_h5parm_name() {
-//    let name = await invoke("get_h5parm_name");
-//    return name;
-//}
+async function get_h5parm_name() {
+    let name = await invoke("get_h5parm_name");
+    return name;
+}
 
 async function get_station_names(h5parm: string, ss: string, st: string): Promise<string[]> {
     return await invoke("get_station_names", {h5: h5parm, solset: ss, soltab: st});
@@ -194,57 +196,60 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
             });
         });
     } else if (ax_selected == "waterfall") {
-        get_values_waterfall(h5parm, ss_selected, st_selected, antenna, "CS002HBA0").then(result => {
-            let data = result[0];
-            let width = result[1];
-            let height = result[2];
-            if (st_selected.includes("phase")) {
-                renderPlot(data, "phase", [width, height]);
-            }else if (st_selected.includes("amplitude")) {
-                renderPlot(data, "amplitude", [width, height]);
-            }
+        get_soltab_times(h5parm, ss_selected, st_selected).then((times: number[]) => {
+            get_soltab_freqs(h5parm, ss_selected, st_selected).then((freqs: number[]) => {
+                get_values_waterfall(h5parm, ss_selected, st_selected, antenna, "CS002HBA0").then(result => {
+                    let data = [result[0], times, freqs];
+                    let width = result[1];
+                    let height = result[2];
+                    if (st_selected.includes("phase")) {
+                        renderPlot(data, "phase", [width, height]);
+                    }else if (st_selected.includes("amplitude")) {
+                        renderPlot(data, "amplitude", [width, height]);
+                    }
+                });
+            });
         });
     }
 });
 
 window.addEventListener("DOMContentLoaded", () => {
-    //let h5parm2 = get_h5parm_name();
-    //console.log("Loading " + h5parm2);
-    //h5parm = "/home/ddkq81/test.h5";
-    h5parm = "/home/ddkq81/Downloads/merged_addCS_selfcalcycle009_linearfulljones_ILTJ060656.34+414049.4_142MHz_uv.dp3-concat.copy.phaseup.h5";
-    get_solset_names(h5parm).then(result => {
-        const solset_list = document.getElementById('solset_picker');
-        result.forEach(ss => {
-            let solset = document.createElement("option");
-            solset.value = ss;
-            solset.textContent = ss;
-            solset_list!.appendChild(solset);
-        });
-
-        let ss_selected = (solset_list as HTMLInputElement).value;
-        const soltab_list = document.getElementById('soltab_picker');
-        get_soltab_names(h5parm, ss_selected).then(result => {
-            result.forEach(st => {
-                let soltab = document.createElement("option");
-                soltab.value = st;
-                soltab.textContent = st;
-                soltab_list!.appendChild(soltab);
+    get_h5parm_name().then(h5 => {
+        h5parm = h5;
+        get_solset_names(h5).then(result => {
+            const solset_list = document.getElementById('solset_picker');
+            result.forEach(ss => {
+                let solset = document.createElement("option");
+                solset.value = ss;
+                solset.textContent = ss;
+                solset_list!.appendChild(solset);
             });
-            let st_selected = (soltab_list as HTMLInputElement).value;
-            get_station_names(h5parm, ss_selected, st_selected).then(result => {
-                let list = document.getElementById('antennas');
-                result.forEach(station => {
-                    let button = document.createElement("div");
-                    button.className = "option";
-                    button.textContent = station;
-                    button.addEventListener('click', () => {
-                    let st = document.getElementById('antennas')!.getElementsByClassName("option");
-                    for (var i = 0; i < st.length; i++) {
-                          st.item(i)!.classList.remove("selected");
-                      };
-                      button.classList.toggle('selected');
+
+            let ss_selected = (solset_list as HTMLInputElement).value;
+            const soltab_list = document.getElementById('soltab_picker');
+            get_soltab_names(h5, ss_selected).then(result => {
+                result.forEach(st => {
+                    let soltab = document.createElement("option");
+                    soltab.value = st;
+                    soltab.textContent = st;
+                    soltab_list!.appendChild(soltab);
+                });
+                let st_selected = (soltab_list as HTMLInputElement).value;
+                get_station_names(h5, ss_selected, st_selected).then(result => {
+                    let list = document.getElementById('antennas');
+                    result.forEach(station => {
+                        let button = document.createElement("div");
+                        button.className = "option";
+                        button.textContent = station;
+                        button.addEventListener('click', () => {
+                        let st = document.getElementById('antennas')!.getElementsByClassName("option");
+                        for (var i = 0; i < st.length; i++) {
+                              st.item(i)!.classList.remove("selected");
+                          };
+                          button.classList.toggle('selected');
+                        });
+                        list!.appendChild(button);
                     });
-                    list!.appendChild(button);
                 });
             });
         });
