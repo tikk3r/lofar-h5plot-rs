@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <main class="container">
+        <div id="sidebar" style="width: 380px; height: 100%;">
+            <div class="selectors">
+                <div class="row">
+                    <select name="solset_picker" id="solset_picker">
+                    </select>
+                    <label for="soltab_picker" style="line-height: 32px;">&nbsp;/&nbsp;</label>
+                    <select name="soltab_picker" id="soltab_picker"></select>
+                    <label for="axis_picker" style="line-height: 32px;">&nbsp;versus&nbsp;</label>
+                    <select name="axis_picker" id="axis_picker">
+                            <option>time</option>
+                            <option>frequency</option>
+                            <option>waterfall</option>
+                    </select>
+                </div>
+                <div>
+              <form class="row" id="plot-form">
+                <button id="button_plot" type="button" style="width: 100%">Plot</button>
+              </form>
+                </div>
+                    <div id="greet-msg"></div>
+            </div>
+            <div class="antennaselector">
+                <div id="antennas" class="scrollable_list">
+                </div>
+            </div>
+        </div>
+        <div id="plotting_area" style="justify-content: center; align-items: center; width: 90%; height: 90%; padding-bottom: 0%; ">
+        </div>
+    </main>
+  </body>
+</html>
