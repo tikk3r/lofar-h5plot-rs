@@ -63,12 +63,16 @@ const renderPlot = function(data: any, mode: string, dimension: string) {
       plotContainer!.innerHTML = '';
       plotContainer!.appendChild(plot);
     } else if (dimension.length = 2) {
+        console.log("width: " + dimension[0]);
+        console.log("height: " + dimension[1]);
+        console.log(dimension[0] * dimension[1]);
+        console.log(data[0].length);
       const plot = Plot.plot({
         marks: [Plot.raster(
             data[0],
             {
-              width: dimension[0],
-              height: dimension[1],
+              width: dimension[1],
+              height: dimension[0],
               interpolate: "nearest",
             }),
         ],
