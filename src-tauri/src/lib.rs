@@ -109,18 +109,6 @@ fn get_values_time(
     };
 
     match st.get_type().to_lowercase().as_str() {
-        //"phase" => {
-        //    let phases_wrapped = data
-        //        .slice(s![.., 0, index, 0, 0])
-        //        .iter()
-        //        .zip(values.slice(s![.., 0, index_ref, 0, 0]))
-        //        .map(|(x, x_ref)| {
-        //            ((x - x_ref) + std::f64::consts::PI).rem_euclid(2.0 * std::f64::consts::PI)
-        //                - std::f64::consts::PI
-        //        })
-        //        .collect::<Vec<f64>>();
-        //    phases_wrapped
-        //}
         "phase" => {
             let values = data
                 .slice_each_axis(|ax| {
@@ -168,7 +156,7 @@ fn get_values_time(
             .to_owned()
             .into_raw_vec_and_offset()
             .0
-        } //_ => values.slice(s![.., 0, index, 0, 0]).to_vec(),
+        }
     }
 }
 
@@ -187,21 +175,103 @@ fn get_values_frequency(
     let stations = st.get_antennas();
     let index = stations.iter().position(|&x| x == antenna).unwrap();
     let index_ref = stations.iter().position(|&x| x == refant).unwrap();
+    let axes = st.get_axes();
+
+    let idx_time = axes.iter().position(|x| x == "time").unwrap();
+    let idx_freq = axes.iter().position(|x| x == "freq").unwrap();
+    let idx_ant = axes.iter().position(|x| x == "ant").unwrap();
+
+    let idx_dir = axes.iter().position(|x| x == "dir").unwrap_or(99);
+    let idx_pol = axes.iter().position(|x| x == "pol").unwrap_or(99);
+
+    let data = if (&axes).len() == 5 {
+        values
+            .slice_each_axis(|ax| {
+                let i = ax.axis.index();
+                if i == idx_pol {
+                    Slice::from(0..1)
+                } else if i == idx_dir {
+                    Slice::from(0..1)
+                } else {
+                    Slice::from(..)
+                }
+            })
+            .to_owned()
+    } else if ((&axes).len() == 4) && (idx_dir != 99) {
+        values
+            .slice_each_axis(|ax| {
+                let i = ax.axis.index();
+                if i == idx_dir {
+                    Slice::from(0..1)
+                } else {
+                    Slice::from(..)
+                }
+            })
+            .to_owned()
+    } else if ((&axes).len() == 4) && (idx_pol != 99) {
+        values
+            .slice_each_axis(|ax| {
+                let i = ax.axis.index();
+                if i == idx_pol {
+                    Slice::from(0..1)
+                } else {
+                    Slice::from(..)
+                }
+            })
+            .to_owned()
+    } else {
+        panic!("Should not arrive here!");
+    };
 
     match st.get_type().to_lowercase().as_str() {
         "phase" => {
-            let phases_wrapped = values
-                .slice(s![0, .., index, 0, 0])
-                .iter()
-                .zip(values.slice(s![0, .., index_ref, 0, 0]))
-                .map(|(x, x_ref)| {
-                    ((x - x_ref) + std::f64::consts::PI).rem_euclid(2.0 * std::f64::consts::PI)
-                        - std::f64::consts::PI
+            let values = data
+                .slice_each_axis(|ax| {
+                    let i = ax.axis.index();
+                    if i == idx_time {
+                        Slice::from(0..1)
+                    } else if i == idx_freq {
+                        Slice::from(..)
+                    } else if i == idx_ant {
+                        Slice::from(index..index + 1)
+                    } else {
+                        Slice::from(..)
+                    }
                 })
-                .collect::<Vec<f64>>();
-            phases_wrapped
+                .to_owned();
+            let values_ref = data
+                .slice_each_axis(|ax| {
+                    let i = ax.axis.index();
+                    if i == idx_time {
+                        Slice::from(0..1)
+                    } else if i == idx_freq {
+                        Slice::from(..)
+                    } else if i == idx_ant {
+                        Slice::from(index_ref..index_ref + 1)
+                    } else {
+                        Slice::from(..)
+                    }
+                })
+                .to_owned();
+            (values - values_ref).into_raw_vec_and_offset().0
         }
-        _ => values.slice(s![0, .., index, 0, 0]).to_vec(),
+        _ => {
+            data.slice_each_axis(|ax| {
+                let i = ax.axis.index();
+                if i == idx_time {
+                    Slice::from(0..1)
+                } else if i == idx_freq {
+                    Slice::from(..)
+                } else if i == idx_ant {
+                    Slice::from(index..index + 1)
+                } else {
+                    Slice::from(..)
+                }
+            })
+            .to_owned()
+            .into_raw_vec_and_offset()
+            .0
+        }
     }
 }
 
