@@ -9,9 +9,10 @@ const renderPlot = function(data: any, mode: string, dimension: any) {
     plot_dimensions = dimension;
     if (dimension.length == 1 && dimension[0] == "time") {
       const plot = Plot.plot({
-        marks: [Plot.line(data, { x: 'x', y: 'y', stroke: 'blue' }),
+        marks: [
+            Plot.line(data, { x: 'x', y: 'y', stroke: 'blue' }),
             Plot.dot(data, { x: 'x', y: 'y', stroke: 'blue' }),
-            Plot.crosshair(data, {x: 'x', y: "y"}),
+            Plot.crosshair(data, {x: 'x', y: "y",})
         ],
         width: plotContainer!.clientWidth*0.85,
         height: plotContainer!.clientHeight*0.95,
@@ -39,7 +40,7 @@ const renderPlot = function(data: any, mode: string, dimension: any) {
       const plot = Plot.plot({
         marks: [Plot.line(data, { x: 'x', y: 'y', stroke: 'blue' }),
             Plot.dot(data, { x: 'x', y: 'y', stroke: 'blue' }),
-            Plot.crosshair(data, {x: 'x', y: "y", textFill: "white"})],
+            Plot.crosshair(data, {x: 'x', y: "y"})],
         width: plotContainer!.clientWidth*0.85,
         height: plotContainer!.clientHeight*0.95,
         marginBottom: 60,
@@ -93,7 +94,7 @@ const renderPlot = function(data: any, mode: string, dimension: any) {
           maxWidth: 'none',
           maxHeight: 'none',
           objectFit: 'fill',
-          fontSize: "24"
+          fontSize: "24",
         },
       });
         
@@ -148,13 +149,7 @@ async function get_values_frequency(h5parm: string, ss: string, st: string, ante
 }
 
 async function get_values_waterfall(h5parm: string, ss: string, st: string, antenna: string, refant: string): Promise<number[]> {
-    return await invoke("get_values_waterfall", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant});
-}
-
-function update_channel_picker(max: number) {
-    const slider = document.getElementById("channel_picker");
-    slider.setAttribute("min", 0);
-    slider.setAttribute("max", max);
+    return await invoke("get_values_waterfall", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant, timediff: timediff, freqdiff: freqdiff});
 }
 
 let h5parm: string = "";
@@ -177,7 +172,7 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
     ax_selected = (axis_list as HTMLInputElement).value;
     if (ax_selected == "time") {
         get_soltab_times(h5parm, ss_selected, st_selected).then((times: number[]) => {
-            channel = parseFloat(document.getElementById("channel_picker").value);
+            channel = parseFloat((document.getElementById("channel_picker") as HTMLInputElement).value);
             get_values_time(h5parm, ss_selected, st_selected, antenna, "CS002HBA0", channel).then((values: number[]) => {
                 data = times.map((value: number, index: number) => ({
                   x: value - times[0],
@@ -222,16 +217,14 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
     }
 });
 
-document.getElementById("plot_freqdiff").addEventListener('change', () => {
-    document.getElementById("plot_freqdiff").selected ^= 1;
-    freqdiff = Boolean(document.getElementById("plot_freqdiff").selected);
-    console.log(document.getElementById("plot_freqdiff").selected);
+document.getElementById("plot_freqdiff")!.addEventListener('change', () => {
+    let element = document.getElementById("plot_freqdiff") as HTMLInputElement
+    freqdiff = Boolean(element.checked);
 });
 
-document.getElementById("plot_timediff").addEventListener('change', () => {
-    document.getElementById("plot_timediff").selected ^= 1;
-    timediff = Boolean(document.getElementById("plot_timediff").selected);
-    console.log(document.getElementById("plot_timediff").selected);
+document.getElementById("plot_timediff")!.addEventListener('change', () => {
+    let element = document.getElementById("plot_timediff") as HTMLInputElement
+    timediff = Boolean(element.checked);
 });
 
 window.addEventListener("DOMContentLoaded", () => {

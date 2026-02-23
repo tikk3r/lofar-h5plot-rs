@@ -318,6 +318,8 @@ fn get_values_waterfall(
     soltab: String,
     antenna: String,
     refant: String,
+    timediff: bool,
+    freqdiff: bool,
 ) -> (Vec<f64>, usize, usize) {
     let h5parm = h5o3::H5parm::open(&h5, true).expect("Failed to read H5parm.");
     let ss = &h5parm.get_solset(solset).expect("Failed to load solset");
@@ -386,7 +388,7 @@ fn get_values_waterfall(
                     } else if i == idx_ant {
                         Slice::from(index..index + 1)
                     } else {
-                        Slice::from(..)
+                        Slice::from(0..1)
                     }
                 })
                 .to_owned();
@@ -400,7 +402,7 @@ fn get_values_waterfall(
                     } else if i == idx_ant {
                         Slice::from(index_ref..index_ref + 1)
                     } else {
-                        Slice::from(..)
+                        Slice::from(0..1)
                     }
                 })
                 .to_owned();
@@ -424,7 +426,7 @@ fn get_values_waterfall(
                     } else if i == idx_ant {
                         Slice::from(index..index + 1)
                     } else {
-                        Slice::from(..)
+                        Slice::from(0..1)
                     }
                 })
                 .to_owned();
@@ -436,9 +438,44 @@ fn get_values_waterfall(
             values
         }
     };
-    let data = data.t().to_owned();
+    let mut data = data.t().to_owned();
     let width = data.shape()[0];
     let height = data.shape()[1];
+
+    if freqdiff {
+        for i in 0..width - 1 {
+            for j in 0..height - 1 {
+                data[[i, j]] = data[[i + 1, j]] - data[[i, j]];
+                match st.get_type().to_lowercase().as_str() {
+                    "phase" => {
+                        data[[i, j]] = (data[[i, j]] - std::f64::consts::PI)
+                            .rem_euclid(2.0 * std::f64::consts::PI)
+                            - std::f64::consts::PI;
+                    }
+                    _ => {}
+                }
+            }
+            data[[width - 1, height - 1]] = data[[width - 2, height - 2]];
+        }
+    }
+
+    if timediff {
+        for i in 0..width - 1 {
+            for j in 0..height - 1 {
+                data[[i, j]] = data[[i, j + 1]] - data[[i, j]];
+                match st.get_type().to_lowercase().as_str() {
+                    "phase" => {
+                        data[[i, j]] = (data[[i, j]] - std::f64::consts::PI)
+                            .rem_euclid(2.0 * std::f64::consts::PI)
+                            - std::f64::consts::PI;
+                    }
+                    _ => {}
+                }
+            }
+            data[[width - 1, height - 1]] = data[[width - 2, height - 2]];
+        }
+    }
+
     (
         data.as_standard_layout()
             .to_owned()
