@@ -23,6 +23,25 @@
                             <option>waterfall</option>
                     </select>
                 </div>
+                <div class="row">
+                        <input style="width: 16px; height: 16px; vertical-align: middle;" type="checkbox" id="plot_weights" name="plot_weights">
+                        <label style="line-height: 28px; vertical-align: middle;">Plot weights</label>
+                        </input>
+                        <input style="width: 16px; height: 16px; vertical-align: middle;" type="checkbox" id="poldif_parr" name="poldif_parr">
+                        <label style="line-height: 28px; vertical-align: middle;">XX&nbsp;-&nbsp;YY</label>
+                        </input>
+                        <input style="width: 16px; height: 16px; vertical-align: middle;" type="checkbox" id="poldif_cross" name="poldif_cross">
+                        <label style="line-height: 28px; vertical-align: middle;">XY&nbsp;-&nbsp;YX</label>
+                        </input>
+                    </div>
+                    <div class="row">
+                        <input style="width: 16px; height: 16px; vertical-align: middle;" type="checkbox" id="plot_timediff" name="plot_timediff">
+                        <label style="line-height: 28px; vertical-align: middle;">Time diff.</label>
+                        </input>
+                        <input style="width: 16px; height: 16px; vertical-align: middle;" type="checkbox" id="plot_freqdiff" name="plot_freqdiff">
+                        <label style="line-height: 28px; vertical-align: middle;">Freq diff.</label>
+                        </input>
+                </div>
                 <div>
               <form class="row" id="plot-form">
                 <button id="button_plot" type="button" style="width: 100%">Plot</button>
@@ -35,7 +54,12 @@
                 </div>
             </div>
         </div>
-        <div id="plotting_area" style="justify-content: center; align-items: center; width: 95%; height: 95%; padding-bottom: 0%; ">
+        <div style="width: 100%;">
+            <div id="plotting_area" style="justify-content: center; align-items: center; width: 100%; height: 95%; padding-bottom: 0%; flex-direction: column; flex: 1;">
+            </div>
+            <div style="width:90%; height: 5%; margin: 0 auto;" class="slidecontainer">
+                <input type="range" min="1" max="100" value="50" class="slider" id="channel_picker">
+            </div>
         </div>
     </main>
   </body>

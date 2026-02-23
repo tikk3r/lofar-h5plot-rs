@@ -5,13 +5,13 @@ import * as Plot from '@observablehq/plot';
 
 const plotContainer = document.getElementById('plotting_area');
 
-const renderPlot = function(data: any, mode: string, dimension: string) {
+const renderPlot = function(data: any, mode: string, dimension: any) {
     plot_dimensions = dimension;
     if (dimension.length == 1 && dimension[0] == "time") {
       const plot = Plot.plot({
         marks: [Plot.line(data, { x: 'x', y: 'y', stroke: 'blue' }),
             Plot.dot(data, { x: 'x', y: 'y', stroke: 'blue' }),
-            Plot.crosshair(data, {x: 'x', y: "y", textfill: "white"}),
+            Plot.crosshair(data, {x: 'x', y: "y"}),
         ],
         width: plotContainer!.clientWidth*0.85,
         height: plotContainer!.clientHeight*0.95,
@@ -39,7 +39,7 @@ const renderPlot = function(data: any, mode: string, dimension: string) {
       const plot = Plot.plot({
         marks: [Plot.line(data, { x: 'x', y: 'y', stroke: 'blue' }),
             Plot.dot(data, { x: 'x', y: 'y', stroke: 'blue' }),
-            Plot.crosshair(data, {x: 'x', y: "y", textfill: "white"})],
+            Plot.crosshair(data, {x: 'x', y: "y", textFill: "white"})],
         width: plotContainer!.clientWidth*0.85,
         height: plotContainer!.clientHeight*0.95,
         marginBottom: 60,
@@ -63,10 +63,6 @@ const renderPlot = function(data: any, mode: string, dimension: string) {
       plotContainer!.innerHTML = '';
       plotContainer!.appendChild(plot);
     } else if (dimension.length = 2) {
-        console.log("width: " + dimension[0]);
-        console.log("height: " + dimension[1]);
-        console.log(dimension[0] * dimension[1]);
-        console.log(data[0].length);
       const plot = Plot.plot({
         marks: [Plot.raster(
             data[0],
@@ -119,9 +115,8 @@ window.addEventListener('resize', () => {
     }
 });
 
-async function get_h5parm_name() {
-    let name = await invoke("get_h5parm_name");
-    return name;
+async function get_h5parm_name(): Promise<string> {
+    return await invoke("get_h5parm_name");
 }
 
 async function get_station_names(h5parm: string, ss: string, st: string): Promise<string[]> {
@@ -144,16 +139,22 @@ async function get_soltab_freqs(h5parm: string, ss: string, st: string): Promise
     return await invoke("get_soltab_freqs", {h5: h5parm, solset: ss, soltab: st});
 }
 
-async function get_values_time(h5parm: string, ss: string, st: string, antenna: string, refant: string): Promise<number[]> {
-    return await invoke("get_values_time", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant});
+async function get_values_time(h5parm: string, ss: string, st: string, antenna: string, refant: string, chan: number): Promise<number[]> {
+    return await invoke("get_values_time", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant, channel: chan});
 }
 
 async function get_values_frequency(h5parm: string, ss: string, st: string, antenna: string, refant: string): Promise<number[]> {
-    return await invoke("get_values_frequency", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant});
+    return await invoke("get_values_frequency", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant, freqdiff: freqdiff});
 }
 
 async function get_values_waterfall(h5parm: string, ss: string, st: string, antenna: string, refant: string): Promise<number[]> {
     return await invoke("get_values_waterfall", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant});
+}
+
+function update_channel_picker(max: number) {
+    const slider = document.getElementById("channel_picker");
+    slider.setAttribute("min", 0);
+    slider.setAttribute("max", max);
 }
 
 let h5parm: string = "";
@@ -161,6 +162,8 @@ let mode: string = "phase";
 let ax_selected: string = "time";
 let data: any = null;
 let plot_dimensions: string = "time";
+let channel: number = 0;
+let freqdiff: boolean = false;
 
 document.getElementById("button_plot")!.addEventListener('click', () => {
     const solset_list = document.getElementById('solset_picker');
@@ -173,7 +176,8 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
     ax_selected = (axis_list as HTMLInputElement).value;
     if (ax_selected == "time") {
         get_soltab_times(h5parm, ss_selected, st_selected).then((times: number[]) => {
-            get_values_time(h5parm, ss_selected, st_selected, antenna, "CS002HBA0").then((values: number[]) => {
+            channel = parseFloat(document.getElementById("channel_picker").value);
+            get_values_time(h5parm, ss_selected, st_selected, antenna, "CS002HBA0", channel).then((values: number[]) => {
                 data = times.map((value: number, index: number) => ({
                   x: value - times[0],
                   y: values[index],
@@ -204,8 +208,8 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
             get_soltab_freqs(h5parm, ss_selected, st_selected).then((freqs: number[]) => {
                 get_values_waterfall(h5parm, ss_selected, st_selected, antenna, "CS002HBA0").then(result => {
                     let data = [result[0], times, freqs];
-                    let width = result[1];
-                    let height = result[2];
+                    let width: number = result[1];
+                    let height: number = result[2];
                     if (st_selected.includes("phase")) {
                         renderPlot(data, "phase", [width, height]);
                     }else if (st_selected.includes("amplitude")) {
@@ -217,8 +221,14 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
     }
 });
 
+document.getElementById("plot_freqdiff").addEventListener('change', () => {
+    document.getElementById("plot_freqdiff").selected ^= 1;
+    freqdiff = Boolean(document.getElementById("plot_freqdiff").selected);
+    console.log(document.getElementById("plot_freqdiff").selected);
+});
+
 window.addEventListener("DOMContentLoaded", () => {
-    get_h5parm_name().then(h5 => {
+    get_h5parm_name().then((h5: string) => {
         h5parm = h5;
         get_solset_names(h5).then(result => {
             const solset_list = document.getElementById('solset_picker');

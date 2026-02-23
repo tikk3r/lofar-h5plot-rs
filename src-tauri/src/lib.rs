@@ -1,5 +1,6 @@
 use h5o3;
-use ndarray::{Axis, Ix2, Slice};
+use ndarray::{Axis, Slice};
+use tauri::utils::config_v1::NotificationAllowlistConfig;
 
 #[tauri::command]
 fn get_h5parm_name() -> String {
@@ -52,6 +53,7 @@ fn get_values_time(
     soltab: String,
     antenna: String,
     refant: String,
+    channel: usize,
 ) -> Vec<f64> {
     let h5parm = h5o3::H5parm::open(&h5, true).expect("Failed to read H5parm.");
     let ss = &h5parm.get_solset(solset).expect("Failed to load solset");
@@ -116,7 +118,7 @@ fn get_values_time(
                     if i == idx_time {
                         Slice::from(..)
                     } else if i == idx_freq {
-                        Slice::from(0..1)
+                        Slice::from(channel..channel + 1)
                     } else if i == idx_ant {
                         Slice::from(index..index + 1)
                     } else {
@@ -130,7 +132,7 @@ fn get_values_time(
                     if i == idx_time {
                         Slice::from(..)
                     } else if i == idx_freq {
-                        Slice::from(0..1)
+                        Slice::from(channel..channel + 1)
                     } else if i == idx_ant {
                         Slice::from(index_ref..index_ref + 1)
                     } else {
@@ -146,7 +148,7 @@ fn get_values_time(
                 if i == idx_time {
                     Slice::from(..)
                 } else if i == idx_freq {
-                    Slice::from(0..1)
+                    Slice::from(channel..channel + 1)
                 } else if i == idx_ant {
                     Slice::from(index..index + 1)
                 } else {
@@ -167,6 +169,7 @@ fn get_values_frequency(
     soltab: String,
     antenna: String,
     refant: String,
+    freqdiff: bool,
 ) -> Vec<f64> {
     let h5parm = h5o3::H5parm::open(&h5, true).expect("Failed to read H5parm.");
     let ss = &h5parm.get_solset(solset).expect("Failed to load solset");
@@ -223,7 +226,7 @@ fn get_values_frequency(
         panic!("Should not arrive here!");
     };
 
-    match st.get_type().to_lowercase().as_str() {
+    let mut final_array = match st.get_type().to_lowercase().as_str() {
         "phase" => {
             let values = data
                 .slice_each_axis(|ax| {
@@ -272,7 +275,23 @@ fn get_values_frequency(
             .into_raw_vec_and_offset()
             .0
         }
+    };
+    if freqdiff {
+        let len = final_array.len() - 1;
+        for i in 0..len {
+            final_array[i] = final_array[i + 1] - final_array[i];
+            match st.get_type().to_lowercase().as_str() {
+                "phase" => {
+                    final_array[i] = (final_array[i] - std::f64::consts::PI)
+                        .rem_euclid(2.0 * std::f64::consts::PI)
+                        - std::f64::consts::PI;
+                }
+                _ => {}
+            }
+        }
+        final_array[len] = final_array[len - 1];
     }
+    final_array
 }
 
 #[tauri::command]
@@ -291,11 +310,6 @@ fn get_values_waterfall(
     let index = stations.iter().position(|&x| x == antenna).unwrap();
     let index_ref = stations.iter().position(|&x| x == refant).unwrap();
     let axes = st.get_axes();
-    //let data = values.clone();
-    //let data = data.index_axis(Axis(4), 0);
-    //let data = data.index_axis(Axis(3), 0);
-    //let data = data.index_axis(Axis(2), index);
-    //let mut data: Array2<f64> = data.into_dimensionality::<Ix2>().unwrap().t().to_owned();
 
     let idx_time = axes.iter().position(|x| x == "time").unwrap();
     let idx_freq = axes.iter().position(|x| x == "freq").unwrap();
@@ -408,7 +422,14 @@ fn get_values_waterfall(
     let data = data.t().to_owned();
     let width = data.shape()[0];
     let height = data.shape()[1];
-    (data.as_standard_layout().to_owned().into_raw_vec_and_offset().0, width, height)
+    (
+        data.as_standard_layout()
+            .to_owned()
+            .into_raw_vec_and_offset()
+            .0,
+        width,
+        height,
+    )
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
