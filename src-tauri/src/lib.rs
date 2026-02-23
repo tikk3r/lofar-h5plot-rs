@@ -54,6 +54,7 @@ fn get_values_time(
     antenna: String,
     refant: String,
     channel: usize,
+    timediff: bool,
 ) -> Vec<f64> {
     let h5parm = h5o3::H5parm::open(&h5, true).expect("Failed to read H5parm.");
     let ss = &h5parm.get_solset(solset).expect("Failed to load solset");
@@ -110,7 +111,7 @@ fn get_values_time(
         panic!("Should not arrive here!");
     };
 
-    match st.get_type().to_lowercase().as_str() {
+    let mut final_array = match st.get_type().to_lowercase().as_str() {
         "phase" => {
             let values = data
                 .slice_each_axis(|ax| {
@@ -159,7 +160,23 @@ fn get_values_time(
             .into_raw_vec_and_offset()
             .0
         }
+    };
+    if timediff {
+        let len = final_array.len() - 1;
+        for i in 0..len {
+            final_array[i] = final_array[i + 1] - final_array[i];
+            match st.get_type().to_lowercase().as_str() {
+                "phase" => {
+                    final_array[i] = (final_array[i] - std::f64::consts::PI)
+                        .rem_euclid(2.0 * std::f64::consts::PI)
+                        - std::f64::consts::PI;
+                }
+                _ => {}
+            }
+        }
+        final_array[len] = final_array[len - 1];
     }
+    final_array
 }
 
 #[tauri::command]

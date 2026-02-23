@@ -140,7 +140,7 @@ async function get_soltab_freqs(h5parm: string, ss: string, st: string): Promise
 }
 
 async function get_values_time(h5parm: string, ss: string, st: string, antenna: string, refant: string, chan: number): Promise<number[]> {
-    return await invoke("get_values_time", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant, channel: chan});
+    return await invoke("get_values_time", {h5: h5parm, solset: ss, soltab: st, antenna: antenna, refant: refant, channel: chan, timediff: timediff});
 }
 
 async function get_values_frequency(h5parm: string, ss: string, st: string, antenna: string, refant: string): Promise<number[]> {
@@ -164,6 +164,7 @@ let data: any = null;
 let plot_dimensions: string = "time";
 let channel: number = 0;
 let freqdiff: boolean = false;
+let timediff: boolean = false;
 
 document.getElementById("button_plot")!.addEventListener('click', () => {
     const solset_list = document.getElementById('solset_picker');
@@ -225,6 +226,12 @@ document.getElementById("plot_freqdiff").addEventListener('change', () => {
     document.getElementById("plot_freqdiff").selected ^= 1;
     freqdiff = Boolean(document.getElementById("plot_freqdiff").selected);
     console.log(document.getElementById("plot_freqdiff").selected);
+});
+
+document.getElementById("plot_timediff").addEventListener('change', () => {
+    document.getElementById("plot_timediff").selected ^= 1;
+    timediff = Boolean(document.getElementById("plot_timediff").selected);
+    console.log(document.getElementById("plot_timediff").selected);
 });
 
 window.addEventListener("DOMContentLoaded", () => {
