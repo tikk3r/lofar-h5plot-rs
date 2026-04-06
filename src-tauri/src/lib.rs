@@ -435,7 +435,7 @@ fn get_values_waterfall(
     let width = data.shape()[0];
     let height = data.shape()[1];
 
-    if freqdiff {
+    if timediff {
         for i in 0..width - 1 {
             for j in 0..height - 1 {
                 match st.get_type().to_lowercase().as_str() {
@@ -453,7 +453,7 @@ fn get_values_waterfall(
         }
     }
 
-    if timediff {
+    if freqdiff {
         for i in 0..width - 1 {
             for j in 0..height - 1 {
                 match st.get_type().to_lowercase().as_str() {
