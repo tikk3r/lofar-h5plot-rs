@@ -68,9 +68,10 @@ const renderPlot = function(data: any, mode: string, dimension: any) {
         marks: [Plot.raster(
             data[0],
             {
-              width: dimension[1],
-              height: dimension[0],
-              interpolate: "nearest",
+              width: dimension[0],
+              height: dimension[1],
+              interpolate: "none",
+              imageRendering: "pixelated",
             }),
         ],
         color: { scheme: mode == "phase" ? "sinebow" : "viridis" },
@@ -82,11 +83,14 @@ const renderPlot = function(data: any, mode: string, dimension: any) {
         x: {
             label: "Time [s]",
             tickRotate: -25,
-            tickFormat: (d: number) => (data[1][d] - data[1][0]).toFixed(0),
+            ticks: data[2]["tick_locations"],
+            tickFormat: i => `${data[2]["tick_labels"][i/80]}`,
         },
         y: {
           label: "Frequency [MHz]",
-          tickFormat: (d: number) => (data[2][d] / 1e6).toFixed(1),
+          tickRotate: -90,
+          ticks: data[1]["tick_locations"],
+          tickFormat: i => `${data[1]["tick_labels"][i/8]}`,
         },
         style: {
           width: '100%',
@@ -203,7 +207,9 @@ document.getElementById("button_plot")!.addEventListener('click', () => {
         get_soltab_times(h5parm, ss_selected, st_selected).then((times: number[]) => {
             get_soltab_freqs(h5parm, ss_selected, st_selected).then((freqs: number[]) => {
                 get_values_waterfall(h5parm, ss_selected, st_selected, antenna, "CS002HBA0").then(result => {
-                    let data = [result[0], times, freqs];
+                    const freq_labels = {"tick_locations": Array.from({ "length": freqs.length / 8}, (_, i) => i * 8), "tick_labels":Array.from({ "length": freqs.length / 8}, (_, i) => (freqs[i * 8] / 1e6).toFixed(1))};
+                    const time_labels = {"tick_locations": Array.from({ "length": times.length / 80}, (_, i) => i * 80), "tick_labels":Array.from({ "length": times.length / 80}, (_, i) => (times[i * 80] - times[0]).toFixed(1))};
+                    let data = [result[0], freq_labels, time_labels];
                     let width: number = result[1];
                     let height: number = result[2];
                     if (st_selected.includes("phase")) {

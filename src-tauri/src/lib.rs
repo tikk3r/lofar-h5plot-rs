@@ -167,7 +167,7 @@ fn get_values_time(
             final_array[i] = final_array[i + 1] - final_array[i];
             match st.get_type().to_lowercase().as_str() {
                 "phase" => {
-                    final_array[i] = (final_array[i] - std::f64::consts::PI)
+                    final_array[i] = (final_array[i] + std::f64::consts::PI)
                         .rem_euclid(2.0 * std::f64::consts::PI)
                         - std::f64::consts::PI;
                 }
@@ -299,7 +299,7 @@ fn get_values_frequency(
             final_array[i] = final_array[i + 1] - final_array[i];
             match st.get_type().to_lowercase().as_str() {
                 "phase" => {
-                    final_array[i] = (final_array[i] - std::f64::consts::PI)
+                    final_array[i] = (final_array[i] + std::f64::consts::PI)
                         .rem_euclid(2.0 * std::f64::consts::PI)
                         - std::f64::consts::PI;
                 }
@@ -330,129 +330,123 @@ fn get_values_waterfall(
     let index_ref = stations.iter().position(|&x| x == refant).unwrap();
     let axes = st.get_axes();
 
-    let idx_time = axes.iter().position(|x| x == "time").unwrap();
-    let idx_freq = axes.iter().position(|x| x == "freq").unwrap();
-    let idx_ant = axes.iter().position(|x| x == "ant").unwrap();
+    let mut idx_time: Option<usize> = None;
+    let mut idx_freq: Option<usize> = None;
+    let mut idx_ant: Option<usize> = None;
+    let mut idx_dir: Option<usize> = None;
+    let mut idx_pol: Option<usize> = None;
 
-    let idx_dir = axes.iter().position(|x| x == "dir").unwrap_or(99);
-    let idx_pol = axes.iter().position(|x| x == "pol").unwrap_or(99);
+    for (idx, axis) in axes.iter().enumerate() {
+        match axis.as_str() {
+            "time" => idx_time = Some(idx),
+            "freq" => idx_freq = Some(idx),
+            "ant" => idx_ant = Some(idx),
+            "dir" => idx_dir = Some(idx),
+            "pol" => idx_pol = Some(idx),
+            _ => unreachable!("Unknown h5parm axis provided!"),
+        }
+    }
 
     let data = if (&axes).len() == 5 {
-        values
-            .slice_each_axis(|ax| {
-                let i = ax.axis.index();
-                if i == idx_pol {
-                    Slice::from(0..1)
-                } else if i == idx_dir {
-                    Slice::from(0..1)
-                } else {
-                    Slice::from(..)
-                }
-            })
-            .to_owned()
-    } else if ((&axes).len() == 4) && (idx_dir != 99) {
-        values
-            .slice_each_axis(|ax| {
-                let i = ax.axis.index();
-                if i == idx_dir {
-                    Slice::from(0..1)
-                } else {
-                    Slice::from(..)
-                }
-            })
-            .to_owned()
-    } else if ((&axes).len() == 4) && (idx_pol != 99) {
-        values
-            .slice_each_axis(|ax| {
-                let i = ax.axis.index();
-                if i == idx_pol {
-                    Slice::from(0..1)
-                } else {
-                    Slice::from(..)
-                }
-            })
-            .to_owned()
+        values.slice_each_axis(|ax| {
+            let i = Some(ax.axis.index());
+            if i == idx_pol {
+                Slice::from(0..1)
+            } else if i == idx_dir {
+                Slice::from(0..1)
+            } else {
+                Slice::from(..)
+            }
+        })
+    } else if ((&axes).len() == 4) && idx_dir.is_some() {
+        values.slice_each_axis(|ax| {
+            let i = Some(ax.axis.index());
+            if i == idx_dir {
+                Slice::from(0..1)
+            } else {
+                Slice::from(..)
+            }
+        })
+    } else if ((&axes).len() == 4) && idx_pol.is_some() {
+        values.slice_each_axis(|ax| {
+            let i = Some(ax.axis.index());
+            if i == idx_pol {
+                Slice::from(0..1)
+            } else {
+                Slice::from(..)
+            }
+        })
     } else {
-        panic!("Should not arrive here!");
+        unreachable!(
+            "Weird axis slicing going on. This should not happen! Is your h5parm non-standard?"
+        );
     };
 
-    let data = match st.get_type().to_lowercase().as_str() {
+    let mut data = match st.get_type().to_lowercase().as_str() {
         "phase" => {
-            let values = data
-                .slice_each_axis(|ax| {
-                    let i = ax.axis.index();
-                    if i == idx_time {
-                        Slice::from(..)
-                    } else if i == idx_freq {
-                        Slice::from(..)
-                    } else if i == idx_ant {
-                        Slice::from(index..index + 1)
-                    } else {
-                        Slice::from(0..1)
-                    }
-                })
-                .to_owned();
-            let values_ref = data
-                .slice_each_axis(|ax| {
-                    let i = ax.axis.index();
-                    if i == idx_time {
-                        Slice::from(..)
-                    } else if i == idx_freq {
-                        Slice::from(..)
-                    } else if i == idx_ant {
-                        Slice::from(index_ref..index_ref + 1)
-                    } else {
-                        Slice::from(0..1)
-                    }
-                })
-                .to_owned();
-            let mut values_reffed = values - values_ref;
-            let mut i = values_reffed.ndim();
-            while i > 2 {
-                values_reffed = values_reffed.index_axis(Axis(i - 1), 0).to_owned();
-                i = i - 1;
-            }
-
+            let values = data.slice_each_axis(|ax| {
+                let i = Some(ax.axis.index());
+                if i == idx_time {
+                    Slice::from(..)
+                } else if i == idx_freq {
+                    Slice::from(..)
+                } else if i == idx_ant {
+                    Slice::from(index..index + 1)
+                } else {
+                    Slice::from(0..1)
+                }
+            });
+            let values_ref = data.slice_each_axis(|ax| {
+                let i = Some(ax.axis.index());
+                if i == idx_time {
+                    Slice::from(..)
+                } else if i == idx_freq {
+                    Slice::from(..)
+                } else if i == idx_ant {
+                    Slice::from(index_ref..index_ref + 1)
+                } else {
+                    Slice::from(0..1)
+                }
+            });
+            let values_reffed = &values - &values_ref;
             values_reffed
         }
         _ => {
-            let mut values = data
-                .slice_each_axis(|ax| {
-                    let i = ax.axis.index();
-                    if i == idx_time {
-                        Slice::from(..)
-                    } else if i == idx_freq {
-                        Slice::from(..)
-                    } else if i == idx_ant {
-                        Slice::from(index..index + 1)
-                    } else {
-                        Slice::from(0..1)
-                    }
-                })
-                .to_owned();
-            let mut i = values.ndim();
-            while i > 2 {
-                values = values.index_axis(Axis(i - 1), 0).to_owned();
-                i = i - 1;
-            }
-            values
+            let values = data.slice_each_axis(|ax| {
+                let i = Some(ax.axis.index());
+                if i == idx_time {
+                    Slice::from(..)
+                } else if i == idx_freq {
+                    Slice::from(..)
+                } else if i == idx_ant {
+                    Slice::from(index..index + 1)
+                } else {
+                    Slice::from(0..1)
+                }
+            });
+            values.to_owned()
         }
     };
-    let mut data = data.t().to_owned();
+    let mut i = data.ndim();
+    while i > 2 {
+        data = data.index_axis_move(Axis(i - 1), 0);
+        i = i - 1;
+    }
     let width = data.shape()[0];
     let height = data.shape()[1];
 
     if freqdiff {
         for i in 0..width - 1 {
             for j in 0..height - 1 {
-                data[[i, j]] = data[[i + 1, j]] - data[[i, j]];
                 match st.get_type().to_lowercase().as_str() {
                     "phase" => {
-                        data[[i, j]] = (data[[i, j]] - std::f64::consts::PI)
+                        data[[i, j]] = ((data[[i + 1, j]] - data[[i, j]]) + std::f64::consts::PI)
                             .rem_euclid(2.0 * std::f64::consts::PI)
                             - std::f64::consts::PI;
                     }
-                    _ => {}
+                    _ => {
+                        data[[i, j]] = data[[i + 1, j]] - data[[i, j]];
+                    }
                 }
             }
             data[[width - 1, height - 1]] = data[[width - 2, height - 2]];
@@ -462,14 +456,15 @@ fn get_values_waterfall(
     if timediff {
         for i in 0..width - 1 {
             for j in 0..height - 1 {
-                data[[i, j]] = data[[i, j + 1]] - data[[i, j]];
                 match st.get_type().to_lowercase().as_str() {
                     "phase" => {
-                        data[[i, j]] = (data[[i, j]] - std::f64::consts::PI)
+                        data[[i, j]] = ((data[[i, j + 1]] - data[[i, j]]) + std::f64::consts::PI)
                             .rem_euclid(2.0 * std::f64::consts::PI)
                             - std::f64::consts::PI;
                     }
-                    _ => {}
+                    _ => {
+                        data[[i, j]] = data[[i, j + 1]] - data[[i, j]];
+                    }
                 }
             }
             data[[width - 1, height - 1]] = data[[width - 2, height - 2]];
@@ -477,7 +472,8 @@ fn get_values_waterfall(
     }
 
     (
-        data.as_standard_layout()
+        data.t()
+            .as_standard_layout()
             .to_owned()
             .into_raw_vec_and_offset()
             .0,
